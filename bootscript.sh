@@ -1,9 +1,24 @@
 #!/bin/bash
-# Update hệ thống và cài đặt Apache2
-sudo apt update
-sudo apt install -y apache2
-# Đảm bảo Apache2 tự động khởi động
-sudo systemctl enable apache2
-sudo systemctl start apache2
-# Tạo trang index đơn giản
-echo "Welcome to Web Server at $(hostname)" | sudo tee /var/www/html/index.html
+set -e
+
+# Cập nhật hệ thống và cài đặt Apache
+apt-get update
+apt-get -y install apache2 openssh-server
+
+# Cấu hình Apache với HTTPS
+a2enmod ssl
+a2ensite default-ssl
+systemctl restart apache2
+
+# Tạo trang chủ đơn giản hiển thị hostname
+echo "$(hostname)" > /var/www/html/index.html
+
+# Bật và khởi động dịch vụ SSH
+systemctl enable ssh
+systemctl start ssh
+
+# Cấu hình tường lửa (ufw)
+ufw allow 22/tcp   # Mở cổng SSH
+ufw allow 80/tcp   # Mở cổng HTTP
+ufw allow 443/tcp  # Mở cổng HTTPS
+ufw enable
