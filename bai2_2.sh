@@ -12,7 +12,7 @@ microstack.openstack security group create webtraffic
 microstack.openstack security group list
 
 microstack.openstack security group rule create --ingress --protocol tcp --dst-port 80 --remote-ip 0.0.0.0/0 webtraffic
-microstack.openstack security group rule create --ingress --protocol tcp --dst-port 22 --remote-ip 0.0.0.0/24 webtraffic
+microstack.openstack security group rule create --ingress --protocol tcp --dst-port 22 --remote-ip 0.0.0.0/0 webtraffic
 microstack.openstack security group rule list webtraffic
 
 microstack.openstack port create --network N1 --fixed-ip subnet=S1,ip-address=10.10.10.100 --security-group webtraffic port-N1
