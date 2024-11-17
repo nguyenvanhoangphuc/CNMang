@@ -1,17 +1,61 @@
 #!/bin/bash
+
+set -e  # Dừng script nếu có lệnh nào lỗi
+
+# 1. Đặt gateway cho router
+echo "Setting external gateway for router R1..."
 microstack.openstack router set --external-gateway external R1
+
+# 2. Bật IP forwarding
+echo "Enabling IP forwarding..."
 sudo sysctl -w net.ipv4.ip_forward=1
+
+# 3. Cấu hình NAT (MASQUERADE) trên interface ens33
+echo "Configuring NAT (MASQUERADE) on interface ens33..."
 sudo iptables -t nat -A POSTROUTING -o ens33 -j MASQUERADE
-wget https://raw.githubusercontent.com/nguyenvanhoangphuc/CNMang/main/bootscript.sh -O bootscript.sh
+
+# 4. Tải bootscript.sh và đặt quyền
+echo "Downloading bootscript.sh..."
+wget -q https://raw.githubusercontent.com/nguyenvanhoangphuc/CNMang/main/bootscript.sh -O bootscript.sh
+
+echo "Moving bootscript.sh to /snap/microstack/ and setting permissions..."
 sudo mv bootscript.sh /snap/microstack/
 sudo chmod +r /snap/microstack/bootscript.sh
-microstack.openstack server create --flavor m1.small --image "ubuntu16" --key-name keyCuong --security-group webtraffic --nic port-id=4b565237-d4f7-4046-b2a5-5dc3500aeed1 --user-data /snap/microstack/bootscript.sh Web-Server
 
-microstack.openstack floating ip create external
-sudo microstack.openstack floating ip list
-sudo snap install openstackclients 
-microstack.openstack floating ip set --port <port_id> <float_ip_id>
+# 5. Tạo server mới với script khởi động
+echo "Creating a new server Web-Server..."
+PORT_ID="4b565237-d4f7-4046-b2a5-5dc3500aeed1"  # Thay port-id bằng giá trị phù hợp
+microstack.openstack server create \
+  --flavor m1.small \
+  --image "ubuntu10" \
+  --key-name keyCuong \
+  --security-group webtraffic \
+  --nic port-id=$PORT_ID \
+  --user-data /snap/microstack/bootscript.sh \
+  Web-Server
 
-curl 10.20.20.57
-ping 10.20.20.57
-ssh -i keyCuong.pem root@10.20.20.57
+# 6. Tạo Floating IP
+echo "Creating a floating IP..."
+FLOATING_IP_ID=$(microstack.openstack floating ip create external -c "ID" -f value)
+FLOATING_IP=$(microstack.openstack floating ip list -c "Floating IP Address" -f value | tail -n1)
+
+echo "Floating IP created: $FLOATING_IP"
+
+# 7. Liên kết Floating IP với server
+echo "Associating floating IP with server..."
+SERVER_PORT_ID=$(microstack.openstack port list -c ID -c "Device Owner" -f value | grep compute: | awk '{print $1}')
+microstack.openstack floating ip set --port $SERVER_PORT_ID $FLOATING_IP
+
+# 8. Kiểm tra kết nối
+echo "Testing connectivity..."
+echo "Accessing web server via curl: curl $FLOATING_IP"
+curl $FLOATING_IP || echo "Curl test failed. Check server configuration."
+
+echo "Pinging floating IP: ping -c 4 $FLOATING_IP"
+ping -c 4 $FLOATING_IP || echo "Ping test failed. Check network configuration."
+
+echo "Attempting SSH connection..."
+ssh -i keyCuong.pem root@$FLOATING_IP || echo "SSH connection failed. Ensure SSH is enabled on the server."
+
+# Kết thúc
+echo "Script execution completed!"
