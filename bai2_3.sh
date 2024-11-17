@@ -46,16 +46,5 @@ echo "Associating floating IP with server..."
 SERVER_PORT_ID=$(microstack.openstack port list -c ID -c "Device Owner" -f value | grep compute: | awk '{print $1}')
 microstack.openstack floating ip set --port $SERVER_PORT_ID $FLOATING_IP
 
-# 8. Kiểm tra kết nối
-echo "Testing connectivity..."
-echo "Accessing web server via curl: curl $FLOATING_IP"
-curl $FLOATING_IP || echo "Curl test failed. Check server configuration."
-
-echo "Pinging floating IP: ping -c 4 $FLOATING_IP"
-ping -c 4 $FLOATING_IP || echo "Ping test failed. Check network configuration."
-
-echo "Attempting SSH connection..."
-ssh -i keyCuong.pem root@$FLOATING_IP || echo "SSH connection failed. Ensure SSH is enabled on the server."
-
 # Kết thúc
 echo "Script execution completed!"
