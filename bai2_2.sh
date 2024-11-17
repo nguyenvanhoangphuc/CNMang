@@ -19,15 +19,3 @@ microstack.openstack port create --network N1 --fixed-ip subnet=S1,ip-address=10
 
 microstack.openstack keypair create keyCuong > keyCuong.pem
 chmod 400 keyCuong.pem
-
-# Lấy IP của port có name là "port-N1"
-PORT_IP=$(microstack.openstack port list -c Name -c "Fixed IP Addresses" -f value | grep "port-N1" | awk '{print $2}' | sed 's/[{}]//g' | awk -F= '{print $2}')
-
-# Kiểm tra nếu PORT_IP không rỗng
-if [ -n "$PORT_IP" ]; then
-    echo "IP của port-N1: $PORT_IP"
-    # Tạo server với IP của port-N1
-    sudo microstack.openstack server create --flavor m1.small --image ubuntu10 --key-name keyCuong --security-group webtraffic --nic net-id="$PORT_IP" Web-Server
-else
-    echo "Không tìm thấy port có name 'port-N1'."
-fi
