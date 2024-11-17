@@ -39,7 +39,7 @@ echo "Creating a floating IP..."
 # Tạo một floating IP mới và lấy ID của nó
 FLOATING_IP_ID=$(microstack.openstack floating ip create external -f value -c id)
 # Lấy địa chỉ IP của floating IP vừa tạo
-FLOATING_IP=$(microstack.openstack floating ip list -f value -c "Floating IP Address" | tail -n1)
+FLOATING_IP=$(microstack.openstack floating ip list -f value -c "Floating IP Address" | tail -n1) 
 echo "Floating IP Address: $FLOATING_IP"
 
 # 7. Liên kết Floating IP với server
